@@ -1,8 +1,8 @@
-import { useState, useref, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Plus,
   Sparkles,
-  trash2,
+  Irash2,
   ArrowLeft,
   BookOpen,
   Hash,
@@ -52,9 +52,19 @@ const CreateBookModal = ({ isOpen, onClose, onBookcreated }) => {
 
     setIsGeneratingOutline(true);
     try {
-
-    } catch (errror) {
-
+      const response = await axiosInstance.post(API_PATHS.AI.GENERATE_OUTLINE, {
+        topic: booktitle,
+        description: aiTopic || "",
+        style: aiStyle,
+        numChapters: numChapters
+      });
+      setChapters(response.data.outline);
+      setStep(2)
+      toast.success("Outline generated! Review and Edit chapters.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.messsage || "Failed to generate outline."
+      )
     } finally {
       setIsGeneratingOutline(false);
     }
@@ -78,11 +88,35 @@ const CreateBookModal = ({ isOpen, onClose, onBookcreated }) => {
     ]);
   };
 
-  const handleFinalizeBook = async () => {};
+  const handleFinalizeBook = async () => {
+    if (!booktitle || chapters.length === 0) {
+      toast.error("Book title and at least one chapter are required.");
+      return;
+    }
+    setIsFinalizingBook(true);
+    try {
+      const response = await axiosInstance.post(API_PATHS.BOOKS.CREATE_BOOK, {
+        title: booktitle,
+        author: user.name || "Unknown Author",
+        chapters: chapters,
+      });
+      toast.success("ebook created successfully!")
+      onBookcreated(response.data._id)
+      onClose();
+      resetModal();
+    } catch (error) {
+      // console.log("TESR__", booktitle, chapters);
+      toast.error(
+        error.response?.data?.messsage || "Failed to create ebook."
+      );
+    } finally {
+      setIsFinalizingBook(false);
+    }
+  }
 
   useEffect(() => {
-    if (step === 2 && chaptersContainerRef.current) {
-      const scrollableDiv = chaptersContainerRef.current;
+    if (step === 2 && chapterContainerRef.current) {
+      const scrollableDiv = chapterContainerRef.current;
       scrollableDiv.scrollTo({
         top: scrollableDiv.scrollHeight,
         behaviour: "smooth",
