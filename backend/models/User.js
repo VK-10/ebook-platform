@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         select : false,
     },
     avatar : {
-        type: string,
+        type: String,
         default : "",
     },
     isPro: {

@@ -1,109 +1,131 @@
-import React from 'react'
-import { useNavigate} from 'react-router-dom'
-import {ArrowLeft, Sparkles, Trash2, Plus, GripVertical } from "lucide-react";
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import {CSS} from "@dnd-kit/utilities";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Sparkles, Trash2, Plus, GripVertical } from "lucide-react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
 
 import Button from "../ui/Button";
 
-//SortableItem Component
-const SortableItem = ({ chapter, index, selectedChapterIndex,onSelectChapter, onDeleteChapter, onGenerateChapterContent, isGenerating}) =>{
-    const { attributes, listeneers, setNodeRef, transform, transtion } = useSortable({id: chapter._id || `new-${index}` })
+// Helper SortableItem
+const SortableItem = ({
+  chapter,
+  index,
+  selectedChapterIndex,
+  onSelectChapter,
+  onDeleteChapter,
+  onGenerateChapterContent,
+  isGenerating,
+}) => {
+  // useSortable returns attributes, listeners, setNodeRef, transform, transition
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: chapter._id || `new-${index}`,
+    });
 
-    const style = {
-        transform: CSS.transform.toString(transform),
-        transition,
-    };
+  // Build transform style safely
+  const style = {
+    transform: transform
+      ? `translate3d(${Math.round(transform.x || 0)}px, ${Math.round(
+          transform.y || 0
+        )}px, 0)`
+      : undefined,
+    transition,
+    cursor: "grab",
+  };
 
-    return (
-        <div ref = {setNodeRef} style={style} className='group flex items-center bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden'>
-            <button className={`flex-1 flex items-center p-3 text-sm rounded-l-lg text-left transition-colors ${ 
-            selectedChapterIndex === index 
-            ? "bg-violet-50/50 text-violet-800 font-semibold"
-            : "text-slate-600 hover:bg-slate-100"
-            }`}
-            onClick={() => onSelectChapter(index)} >
-                <GripVertical classname="w-4 h-4 text-slate-400 mr-2 cursor-grab" {...listeners} {...attributes} />
-                <span className="truncate">{chapter.title}</span>
-            </button>
-            <div className='flex items-center ml-2 bg-white opacity-0 group-hover:opacity-100 transition-opacity px-2 py-3 absolute right-0'>
-                <Button variant="ghost" size="small" clasName="py-2 px-2" onClick={() => onGenerateChapterContent(index)} isLoading={isGenerating === index} title="Generate content with AI">
-                    {isGenerating !== index && <Sparkles className='w-35 h-3.5 text-violet-800'/>}
-                </Button>
-                <Button variant="ghost" size="small" clasName="py-22 px-2" onClick={() => onDeleteChapter(index)} title="delete chapter" >
-                    <Trash2 className='w-3.5 h-3.5 text-red-500'/>
-                    </Button>
-            </div>
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`flex items-center justify-between p-2 rounded hover:bg-slate-50 ${
+        selectedChapterIndex === index ? "bg-slate-100" : ""
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div {...listeners} className="cursor-grab">
+          <GripVertical />
         </div>
-    )
+        <div
+          className="flex-1 cursor-pointer"
+          onClick={() => onSelectChapter(index)}
+        >
+          <div className="font-medium">{chapter.title || `Untitled ${index + 1}`}</div>
+          <div className="text-sm text-slate-500">{chapter.summary || ""}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          onClick={() => onGenerateChapterContent(index)}
+          disabled={isGenerating}
+        >
+          <Sparkles />
+        </Button>
+
+        <Button variant="danger" onClick={() => onDeleteChapter(index)}>
+          <Trash2 />
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 const ChapterSidebar = ({
-    book,
-    selectedChapterIndex,
-    onSelectChapter,
-    onAddChapter,
-    onDeleteChapter,
-    onGenerateChapterContent,
-    isGenerating,
-    onReorderChapters,
+  chapters = [],
+  selectedChapterIndex = 0,
+  onSelectChapter = () => {},
+  onAddChapter = () => {},
+  onDeleteChapter = () => {},
+  onGenerateChapterContent = () => {},
+  isGenerating = false,
+  onBack = () => {},
 }) => {
-    const navigate = usenavigate();
-    const chapterIds = book.chapters.map(
-        (chapter, index) => chapter._id || `new-${index}`
-    );
-
-    const handleDragEnd = (event) => {
-        const { active, over } = event;
-        if (active.id !== over.id) {
-            const oldIndex = chapterIds.indexOf(active.id);
-            const newIndex = chapterIds.indexOf(over.id);
-            onReorderChapters(oldIndex, newIndex);
-        }
-    };
-    
   return (
-    <aside className='w-80 h-full bg-white border-r border-slate-200 flex flex-col'>
-        <div className='p-4 border-b border-slate-200'>
-            <Button variant ="ghost" size='sm' onClick={()=> navigate("/dashboard")}>
-                <ArrowLeft className='w-4 h-4 mr-2'/>
-                back to Dashboard
-            </Button>
-            <h2 className='text-base fort-semibold text-slate-800 mt-4 truncate' title ={book.title}>
-                {book.title}
-            </h2>
+    <aside className="w-80 border-r">
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft />
+          </Button>
+          <h4 className="text-lg font-semibold">Chapters</h4>
         </div>
-        <div className='flex-1 overflow-y-auto'>
-            <DndContext collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            >
-                <SortableContext items={chapterIds}
-                    strategy= {verticalListSortingStrategy} >
-                        <div clasName = "p-4 space-y-2">
-                            {book.chapters.map((chapter, index)=>(
-                                <SortableItem key = {chapter._id || `new-${index}`} chapter = {chapter} index = {index} 
-                                    selectedChapterIndex={selectedChapterIndex} onSelectChapter={onSelectChapter}
-                                    onDeleteChapter={onDeleteChapter}
-                                    onGenerateChapterContent={onGenerateChapterContent}
-                                    isGenerating={isGenerating}
-                                    onReorderChapters={onReorderChapters}
-                                    />
-                            ))}
-                        </div>
-                    </SortableContext>
-            </DndContext>
-        </div>
+        <div>{/* additional controls if any */}</div>
+      </div>
 
-        <div className='p-4 border-t border-slate-200'>
-            <Button variant="secondary" onclick={onAddChapter}
-                clasName="w-full" icon={Plus} >
-                    New Chapter
-                </Button>
-        </div>
+      <div className="p-2">
+        <DndContext collisionDetection={closestCenter}>
+          <SortableContext items={chapters.map((c, idx) => c._id || `new-${idx}`)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {chapters.map((chapter, idx) => (
+                <SortableItem
+                  key={chapter._id || `new-${idx}`}
+                  chapter={chapter}
+                  index={idx}
+                  selectedChapterIndex={selectedChapterIndex}
+                  onSelectChapter={onSelectChapter}
+                  onDeleteChapter={onDeleteChapter}
+                  onGenerateChapterContent={onGenerateChapterContent}
+                  isGenerating={isGenerating}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
 
+      <div className="p-4 border-t border-slate-200">
+        <Button variant="secondary" onClick={onAddChapter} className="w-full" icon={Plus}>
+          New Chapter
+        </Button>
+      </div>
     </aside>
-  )
-}
+  );
+};
 
-export default ChapterSidebar
+export default ChapterSidebar;

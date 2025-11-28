@@ -6,7 +6,7 @@ const Book = require("../models/Book");
 
 const createBook = async (req , res)=> {
     try {
-        const { title, author, subtitle, chapter } = req.body;
+        const { title, author, subtitle, chapters } = req.body;
 
         if (!title || !author) {
             return res.status(400).json({ message: "Please provide  a title and author "});
@@ -17,7 +17,7 @@ const createBook = async (req , res)=> {
             title,
             author,
             subtitle,
-            chapters,
+            chapters: chapters || [],
         });
 
         res.status(201).json(book);

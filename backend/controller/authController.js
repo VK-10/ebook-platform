@@ -13,7 +13,9 @@ const generateToken = (id) => {
 //@route POST /api/auth/register
 //@access Public
 
-axports.registerUser = async (req , res) => {
+exports.registerUser = async (req , res) => {
+    console.log("BODY:", req.body);
+
     const { name, email, password } = req.body;
 
     try {
@@ -87,7 +89,8 @@ exports.getProfile = async (req, res) => {
             isPro: user.isPro,
         });
     } catch (error) {
-        res.status(500).json({ message: "Server error"});
+        console.error("GET PROFILE ERROR:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };
 
@@ -107,7 +110,7 @@ exports.updateUserProfile = async (req, res) => {
 
             res.json({
                 _id: updateUser._id,
-                name: updatedUser.name,
+                name: updateUser.name,
             });
         } else {
             res.status(404).json({ message: "User not found"});

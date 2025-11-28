@@ -23,8 +23,23 @@ connectDB();
 
 app.use(express.json());
 
+// dev only
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy",
+    "default-src 'self'; connect-src 'self' http://localhost:8000 ws://localhost:8000; img-src 'self' data: http://localhost:8000; style-src 'self' 'unsafe-inline';"
+  );
+  next();
+});
 
+
+//static uploads
 app.use("/backend/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Validate route modules before using them
+// assertIsRouter(authRoutes, 'authRoutes');
+// assertIsRouter(bookRoutes, 'bookRoutes');
+// assertIsRouter(aiRoutes, 'aiRoutes');
+// assertIsRouter(exportRoutes, 'exportRoutes');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);

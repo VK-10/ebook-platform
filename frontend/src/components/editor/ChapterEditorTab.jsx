@@ -1,155 +1,131 @@
-import React from 'react'
-import {useMemo, useState } from "react";
-import {Sparkles, Type, Eye, Maximize2, SpellCheck } from "lucide-react";
-import InputField from "../ui/Button";
-import SimpleMEditor from "./SimpleEditor";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Sparkles, Trash2, Plus, GripVertical } from "lucide-react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
 
-const ChapterEditorTab = ({
-    book = {
-        title: "Untitled",
-        chapters: [
-            {
-                title: "Chapter 1",
-                content: "-"
-            }
-        ]
-    },
-    selectedChapterIndex = 0,
-    onChapterChange = ()=> {},
-    onGenerateChapterContent = () => {},
-    isGenerating,
+import Button from "../ui/Button";
+
+// Helper SortableItem
+const SortableItem = ({
+  chapter,
+  index,
+  selectedChapterIndex,
+  onSelectChapter,
+  onDeleteChapter,
+  onGenerateChapterContent,
+  isGenerating,
 }) => {
+  // useSortable returns attributes, listeners, setNodeRef, transform, transition
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: chapter._id || `new-${index}`,
+    });
 
-    const [isPreviewMode, setIsPreviewMode] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+  // Build transform style safely
+  const style = {
+    transform: transform
+      ? `translate3d(${Math.round(transform.x || 0)}px, ${Math.round(
+          transform.y || 0
+        )}px, 0)`
+      : undefined,
+    transition,
+    cursor: "grab",
+  };
 
-    //simple markdown parser
-    const formatMarkdown = (content) => {
-    return content
-        // Headers
-        .replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold mb-4 mt-6">$1</h3>')
-        .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mb-4 mt-8">$1</h2>')
-        .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-6 mt-8">$1</h1>')
-
-        // Bold and Italic
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-
-        // Blockquotes
-        .replace(
-        /^> (.*$)/gm,
-        '<blockquote class="border-l-4 border-violet-500 pl-4 italic text-gray-700 my-4">$1</blockquote>'
-        )
-
-        // Unordered lists
-        .replace(/^- (.*$)/gm, '<li class="ml-4 mb-1">• $1</li>')
-        .replace(/(<li.*<\/li>)/gs, '<ul class="my-4">$1</ul>')
-
-        // Ordered lists
-        .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 mb-1 list-decimal">$1</li>')
-        .replace(
-        /(<li class="ml-4 mb-1 list-decimal">.*<\/li>)/gs,
-        '<ol class="my-4 ml-4">$1</ol>'
-        )
-
-        // Paragraphs
-        .split('\n\n')
-        .map((paragraph) => {
-        paragraph = paragraph.trim();
-        if (!paragraph) return '';
-        // Skip if already wrapped in HTML tags
-        if (paragraph.startsWith('<')) return paragraph;
-        return `<p class="mb-4 text-justify">${paragraph}</p>`;
-        })
-        .join('');
-    };
-
-
-    const mdeOptions = useMemo(() => {
-        return {
-            autofocus: true,
-            spellChecker: false,
-            toolbar: [
-                "bold", "italic", "heading", "|",
-                "qoute", "unordered-list", "ordered-list", "|",
-                "link", "image", "|",
-                "preview", "side-by-side", "fullscreen",
-            ],
-        };
-    },[])
-
-    if(selectedChapterIndex === null || !book.chapters[selectedChapterIndex]) {
-        return (
-            <div className='flex-1 flex items-center justify-center'>
-                <div className='text-center'>
-                    <div className='w-16 h-16 bg-gray-100 rounded-full flex flex items-center justify-center mx-auto mb-4'>
-                        <Type className='w-8 h-8 text-gray-40'/>
-                    </div>
-                    <p className='text-gray-500 text-lg'> Select a chapter to start editing</p>
-                    <p className='text-gray-400 text-sm mt-1'>Choose from the sidebar to begin writing</p>
-                </div>
-            </div>
-        )
-    } 
-
-    const currentChapter = book.chapters[selectedChapterIndex];
-
-    return <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'flex-1'} flex flex-col`}> 
-        {/*Header*/}
-        <div className=''>
-            <div className=''>
-                <div className=''>
-                    <div>
-                        <h1 className=''> Chapter Editor</h1>
-                        <p className=''>
-                            Editing : {currentChapter.title || `Chapter ${selectedChapterIndex + 1}`}
-                        </p>
-                    </div>
-                    <div className=''>
-                        {/*Editor Controls*/}
-                        <div className=''>
-                            <button onClick={() => setIsPreviewMode(false)}
-                                className = {`px-3 py-2 text-sm font-medium transtion-colors ${
-                                    !isPreviewMode
-                                    ? 'bg-violet-50 text-violet-700 border-r border-violet-200'
-                                    : ' text-gray-600 hover:bg-gray-50'
-                                }`} >
-                                    Edit
-                                </button>
-                                
-                                <button onClick={() => setIsPreviewMode(true)}
-                                className = {`px-3 py-2 text-sm font-medium transtion-colors ${
-                                    isPreviewMode
-                                    ? 'bg-violet-50 text-violet-700 '
-                                    : ' text-gray-600 hover:bg-gray-50'
-                                }`} >
-                                    Preview
-                                </button>
-
-                                <button onClick={() => setIsFullscreen(!isFullscreen)}
-                                    className=''
-                                    title="Toggle Fullscreen"
-                                >
-                                    <Maximize2 className=''/>
-                                </button>
-
-                                <Button onClick={() => onGenerateChapterContent(selectedChapterIndex)}
-                                    isLoading = {isGenerating === selectedChapterIndex}
-                                    icon = {Sparkles}
-                                    size ="sm"
-                                >
-                                    Generate with AI
-                                </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            {/*Content Area*/}
-            
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`flex items-center justify-between p-2 rounded hover:bg-slate-50 ${
+        selectedChapterIndex === index ? "bg-slate-100" : ""
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div {...listeners} className="cursor-grab">
+          <GripVertical />
         </div>
+        <div
+          className="flex-1 cursor-pointer"
+          onClick={() => onSelectChapter(index)}
+        >
+          <div className="font-medium">{chapter.title || `Untitled ${index + 1}`}</div>
+          <div className="text-sm text-slate-500">{chapter.summary || ""}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          onClick={() => onGenerateChapterContent(index)}
+          disabled={isGenerating}
+        >
+          <Sparkles />
+        </Button>
+
+        <Button variant="danger" onClick={() => onDeleteChapter(index)}>
+          <Trash2 />
+        </Button>
+      </div>
     </div>
+  );
 };
 
-export default ChapterEditorTab
+const ChapterSidebar = ({
+  chapters = [],
+  selectedChapterIndex = 0,
+  onSelectChapter = () => {},
+  onAddChapter = () => {},
+  onDeleteChapter = () => {},
+  onGenerateChapterContent = () => {},
+  isGenerating = false,
+  onBack = () => {},
+}) => {
+  return (
+    <aside className="w-80 border-r">
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft />
+          </Button>
+          <h4 className="text-lg font-semibold">Chapters</h4>
+        </div>
+        <div>{/* additional controls if any */}</div>
+      </div>
+
+      <div className="p-2">
+        <DndContext collisionDetection={closestCenter}>
+          <SortableContext items={chapters.map((c, idx) => c._id || `new-${idx}`)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {chapters.map((chapter, idx) => (
+                <SortableItem
+                  key={chapter._id || `new-${idx}`}
+                  chapter={chapter}
+                  index={idx}
+                  selectedChapterIndex={selectedChapterIndex}
+                  onSelectChapter={onSelectChapter}
+                  onDeleteChapter={onDeleteChapter}
+                  onGenerateChapterContent={onGenerateChapterContent}
+                  isGenerating={isGenerating}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+
+      <div className="p-4 border-t border-slate-200">
+        <Button variant="secondary" onClick={onAddChapter} className="w-full" icon={Plus}>
+          New Chapter
+        </Button>
+      </div>
+    </aside>
+  );
+};
+
+export default ChapterSidebar;

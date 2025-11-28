@@ -45,6 +45,4 @@ const upload = multer ({
     },
 }).single("coverImage"); // field name for the uploaded file
 
-module.exports = {
-    upload
-}
+module.exports = upload;
