@@ -1,7 +1,7 @@
 import React from 'react'
 import { Divide, Type } from "lucide-react";
-import MEditor, { commands } from "@uiw/react-md-editor";
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor, { commands } from "@uiw/react-md-editor";
+
 
 
 const SimpleMEditor = ({

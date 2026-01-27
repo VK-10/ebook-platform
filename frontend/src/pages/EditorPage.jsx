@@ -40,20 +40,20 @@ const EditorPage = () => {
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("editor");
   const fileInputRef = useRef(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // AI Modal State
   const [isOutlineModalOpen, setIsOutlineModalOpen] = useState(false);
   const [aiTopic, setAiTopic] = useState("");
   const [aiStyle, setAiStyle] = useState("Informative");
-  // isGenerating holds either false or the index being generated
-  const [isGenerating, setIsGenerating] = useState(false);
+  // isGenerating holds either null (not generating) or the index being generated
+  const [isGenerating, setIsGenerating] = useState(null); // null | number
 
   useEffect(() => {
     const fetchBook = async () => {
       try {
         const response = await axiosInstance.get(
-          `${API_PATHS.BOOKS.GET_BOOK_BY_ID}/${bookId}`
+          `${API_PATHS.BOOKS.GET_BOOKS_BY_ID}/${bookId}`
         );
         setBook(response.data);
       } catch (error) {
@@ -66,6 +66,12 @@ const EditorPage = () => {
     fetchBook();
   }, [bookId, navigate]);
 
+  // Keep selectedChapterIndex within bounds whenever chapters length changes
+  useEffect(() => {
+    if (!book?.chapters?.length) return;
+    setSelectedChapterIndex((idx) => Math.min(idx, book.chapters.length - 1));
+  }, [book?.chapters?.length]);
+
   const handleBookChange = (e) => {
     const { name, value } = e.target;
     setBook((prev) => ({ ...prev, [name]: value }));
@@ -73,7 +79,6 @@ const EditorPage = () => {
 
   const handleChapterChange = (e) => {
     const { name, value } = e.target;
-    // fixed casing: book.chapters
     const updatedChapters = [...(book?.chapters || [])];
     updatedChapters[selectedChapterIndex] = {
       ...updatedChapters[selectedChapterIndex],
@@ -109,13 +114,14 @@ const EditorPage = () => {
     if (!book?.chapters) return;
     setBook((prev) => ({
       ...prev,
-      // corrected object syntax and arrayMove usage
       chapters: arrayMove(prev.chapters, oldIndex, newIndex),
     }));
-    setSelectedChapterIndex(newIndex); // keep the selected chapter consistent after reordering
+    setSelectedChapterIndex(newIndex);
   };
 
   const handleSaveChanges = async (bookToSave = book, showToast = true) => {
+    if (!bookToSave) return;
+
     setIsSaving(true);
     try {
       await axiosInstance.put(
@@ -142,10 +148,14 @@ const EditorPage = () => {
     setIsUploading(true);
 
     try {
-      // fixed variable names and headers
-      const response = await axiosInstance.put(`${API_PATHS.BOOKS.UPDATE_COVER}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // include bookId in URL (many backends expect it)
+      const response = await axiosInstance.put(
+        `${API_PATHS.BOOKS.UPDATE_COVER}/${bookId}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       setBook(response.data);
       toast.success("Cover image updated");
     } catch (error) {
@@ -171,8 +181,7 @@ const EditorPage = () => {
         style: aiStyle,
       });
 
-      // fixed variable names
-      const updatedChapters = [...(book?.chapters || [])];
+      const updatedChapters = [...book.chapters];
       updatedChapters[index] = {
         ...updatedChapters[index],
         content: response.data.content,
@@ -187,12 +196,12 @@ const EditorPage = () => {
       console.error(error);
       toast.error("Failed to generate chapter content");
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(null);
     }
   };
 
   const handleExportPDF = async () => {
-    toast.loading("Generating PDF...");
+    const toastId = toast.loading("Generating PDF...");
     try {
       const response = await axiosInstance.get(`${API_PATHS.EXPORT.PDF}/${bookId}/pdf`, {
         responseType: "blob",
@@ -205,19 +214,21 @@ const EditorPage = () => {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.success("PDF export started!");
     } catch (error) {
       console.error(error);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error("Failed to export PDF.");
     }
   };
 
   const handleExportDoc = async () => {
-    toast.loading("Generating Document...");
+    const toastId = toast.loading("Generating Document...");
     try {
-      const response = await axiosInstance.get(`${API_PATHS.EXPORT.PDF}/${bookId}/doc`, {
+      // Use dedicated DOC path if available, otherwise fall back to PDF/doc endpoint
+      const docEndpoint = API_PATHS.EXPORT.DOC ? `${API_PATHS.EXPORT.DOC}/${bookId}` : `${API_PATHS.EXPORT.PDF}/${bookId}/doc`;
+      const response = await axiosInstance.get(docEndpoint, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -228,11 +239,11 @@ const EditorPage = () => {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.success("Document export started!");
     } catch (error) {
       console.error(error);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error("Failed to export Document.");
     }
   };
@@ -246,8 +257,7 @@ const EditorPage = () => {
   }
 
   return (
-    <>
-      {/* fixed className typo: min-h-screen */}
+      
       <div className="flex bg-slate-50 font-sans relative min-h-screen">
         {/* Mobile Sidebar */}
         {isSidebarOpen && (
@@ -384,7 +394,7 @@ const EditorPage = () => {
           </div>
         </main>
       </div>
-    </>
+
   );
 };
 

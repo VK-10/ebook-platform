@@ -10,7 +10,6 @@ import {
 
 import Button from "../ui/Button";
 
-// Helper SortableItem
 const SortableItem = ({
   chapter,
   index,
@@ -20,21 +19,19 @@ const SortableItem = ({
   onGenerateChapterContent,
   isGenerating,
 }) => {
-  // useSortable returns attributes, listeners, setNodeRef, transform, transition
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: chapter._id || `new-${index}`,
+      disabled: isGenerating !== null,
     });
 
-  // Build transform style safely
   const style = {
     transform: transform
-      ? `translate3d(${Math.round(transform.x || 0)}px, ${Math.round(
-          transform.y || 0
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(
+          transform.y
         )}px, 0)`
       : undefined,
     transition,
-    cursor: "grab",
   };
 
   return (
@@ -42,67 +39,104 @@ const SortableItem = ({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`flex items-center justify-between p-2 rounded hover:bg-slate-50 ${
-        selectedChapterIndex === index ? "bg-slate-100" : ""
+      className={`group flex items-center bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden ${
+        selectedChapterIndex === index
+          ? "bg-violet-50/50 text-violet-800 font-semibold"
+          : "text-slate-600 hover:bg-slate-100"
       }`}
+      onClick={() => onSelectChapter(index)}
     >
-      <div className="flex items-center gap-2">
-        <div {...listeners} className="cursor-grab">
-          <GripVertical />
-        </div>
-        <div
-          className="flex-1 cursor-pointer"
-          onClick={() => onSelectChapter(index)}
-        >
-          <div className="font-medium">{chapter.title || `Untitled ${index + 1}`}</div>
-          <div className="text-sm text-slate-500">{chapter.summary || ""}</div>
-        </div>
+      <div className="flex items-center gap-2 flex-1 min-w-0 px-3 py-2">
+        <GripVertical
+          className="w-4 h-4 text-slate-400 cursor-grab"
+          {...listeners}
+        />
+        <span className="truncate">
+          {chapter.title || `Untitled ${index + 1}`}
+        </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity px-2">
         <Button
           variant="ghost"
+          size="small"
           onClick={() => onGenerateChapterContent(index)}
-          disabled={isGenerating}
+          isLoading={isGenerating === index}
+          title="Generate Content with AI"
         >
-          <Sparkles />
+          {isGenerating !== index && (
+            <Sparkles className="w-3.5 h-3.5 text-violet-800" />
+          )}
         </Button>
 
-        <Button variant="danger" onClick={() => onDeleteChapter(index)}>
-          <Trash2 />
+        <Button
+          variant="ghost"
+          size="small"
+          onClick={() => onDeleteChapter(index)}
+          title="Delete Chapter"
+        >
+          <Trash2 className="w-3.5 h-3.5 text-red-500" />
         </Button>
       </div>
     </div>
   );
 };
 
+/* ---------------- Sidebar ---------------- */
+
 const ChapterSidebar = ({
-  chapters = [],
-  selectedChapterIndex = 0,
-  onSelectChapter = () => {},
-  onAddChapter = () => {},
-  onDeleteChapter = () => {},
-  onGenerateChapterContent = () => {},
-  isGenerating = false,
-  onBack = () => {},
+  book,
+  selectedChapterIndex,
+  onSelectChapter,
+  onAddChapter,
+  onDeleteChapter,
+  onGenerateChapterContent,
+  isGenerating,
+  onReorderChapters,
 }) => {
+  const navigate = useNavigate();
+
+  if (!book || !book.chapters) return null;
+
+  const chapterIds = book.chapters.map(
+    (chapter, index) => chapter._id || `new-${index}`
+  );
+
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = chapterIds.indexOf(active.id);
+    const newIndex = chapterIds.indexOf(over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorderChapters(oldIndex, newIndex);
+    }
+  };
+
   return (
-    <aside className="w-80 border-r">
-      <div className="p-4 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft />
-          </Button>
-          <h4 className="text-lg font-semibold">Chapters</h4>
-        </div>
-        <div>{/* additional controls if any */}</div>
+    <aside className="w-80 h-full bg-white border-r border-slate-200 flex flex-col">
+      <div className="p-4 border-b border-slate-200">
+        <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+
+        <h2
+          className="text-base font-semibold text-slate-800 mt-4 truncate"
+          title={book.title}
+        >
+          {book.title}
+        </h2>
       </div>
 
-      <div className="p-2">
-        <DndContext collisionDetection={closestCenter}>
-          <SortableContext items={chapters.map((c, idx) => c._id || `new-${idx}`)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
-              {chapters.map((chapter, idx) => (
+      <div className="flex-1 overflow-y-auto">
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={chapterIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="p-4 space-y-2">
+              {book.chapters.map((chapter, idx) => (
                 <SortableItem
                   key={chapter._id || `new-${idx}`}
                   chapter={chapter}
@@ -120,7 +154,12 @@ const ChapterSidebar = ({
       </div>
 
       <div className="p-4 border-t border-slate-200">
-        <Button variant="secondary" onClick={onAddChapter} className="w-full" icon={Plus}>
+        <Button
+          variant="secondary"
+          onClick={onAddChapter}
+          className="w-full"
+          icon={Plus}
+        >
           New Chapter
         </Button>
       </div>

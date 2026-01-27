@@ -2,44 +2,77 @@ import React from "react";
 import Button from "../ui/Button";
 import { UploadCloud } from "lucide-react";
 import { BASE_URL } from "../../utils/apiPaths";
+import InputField from "../ui/InputField";
 
 const BookDetailsTab = ({
-  book = {},
-  onBookChange = () => {},
-  onCoverUpload = () => {},
-  isUploading = false,
-  fileInputRef = null,
+  book,
+  onBookChange,
+  onCoverUpload,
+  isUploading,
+  fileInputRef,
 }) => {
   // safe cover image URL handling
   const rawCover = book?.coverImage || "";
   const coverImageUrl =
-    rawCover && rawCover.startsWith && rawCover.startsWith("http")
+    rawCover && rawCover.startsWith?.("http")
       ? rawCover
       : rawCover
       ? `${BASE_URL}/backend${rawCover}`.replace(/\\/g, "/")
       : "";
 
   const handleClickUpload = () => {
-    if (fileInputRef && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    fileInputRef?.current?.click();
   };
 
   return (
-    <div className="p-4">
-      <h3 className="text-lg font-semibold">Cover Image</h3>
+    <div>
+      <h3 className="text-lg font-semibold">Book Details</h3>
+
+      <InputField
+        label="Title"
+        name="title"
+        value={book.title || ""}
+        onChange={onBookChange}
+        className="mt-3"
+      />
+
+      <InputField
+        label="Author"
+        name="author"
+        value={book.author || ""}
+        onChange={onBookChange}
+        className="mt-3"
+      />
+
       <div className="mt-3">
-        {coverImageUrl ? (
-          <img src={coverImageUrl} alt="Cover" className="max-w-xs rounded" />
-        ) : (
-          <div className="w-40 h-56 bg-slate-100 flex items-center justify-center rounded">
-            <span>No cover</span>
-          </div>
-        )}
+        <InputField
+          label="Subtitle"
+          name="subtitle"
+          value={book.subtitle || ""}
+          onChange={onBookChange}
+        />
+      </div>
+
+      <div className="p-4">
+        <h3 className="text-lg font-semibold">Cover Image</h3>
+
+        <div className="mt-3">
+          {coverImageUrl ? (
+            <img
+              src={coverImageUrl}
+              alt="Cover"
+              className="max-w-xs rounded"
+            />
+          ) : (
+            <div className="w-40 h-56 bg-slate-100 flex items-center justify-center rounded">
+              <span>No cover</span>
+            </div>
+          )}
+        </div>
 
         <div className="mt-3">
           <p className="mb-2">
-            Upload a new cover image. Recommended size: 600x800px.
+            Upload a new cover image. Recommended size: 600×800px.
           </p>
 
           <input
