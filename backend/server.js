@@ -11,13 +11,27 @@ const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
 
-app.use(
-    cors({
-        origin: "*",
-        methods: ["GET", "POST", "PUT", "DELETE"],
-        allowedHeaders: ["Content-Type", "Authorization"]
-    })
-)
+// app.use(
+//     cors({
+//         origin: "*",
+//         methods: ["GET", "POST", "PUT", "DELETE"],
+//         allowedHeaders: ["Content-Type", "Authorization"]
+//     })
+// )
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Blocked by CORS"));
+    }
+  },
+  credentials: true,
+}));
+
 
 connectDB();
 
