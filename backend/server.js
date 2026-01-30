@@ -39,6 +39,9 @@ app.use(express.json());
 //   next();
 // });
 
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 
 //static uploads
 app.use("/backend/uploads", express.static(path.join(__dirname, "uploads")));
