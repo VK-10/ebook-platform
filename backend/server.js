@@ -29,7 +29,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+
 
 
 
@@ -44,7 +44,6 @@ app.use(express.json());
 //   );
 //   next();
 // });
-
 // app.options("*", cors());
 
 app.get("/", (req, res) => {
@@ -54,11 +53,7 @@ app.get("/", (req, res) => {
 //static uploads
 app.use("/backend/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Validate route modules before using them
-// assertIsRouter(authRoutes, 'authRoutes');
-// assertIsRouter(bookRoutes, 'bookRoutes');
-// assertIsRouter(aiRoutes, 'aiRoutes');
-// assertIsRouter(exportRoutes, 'exportRoutes');
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
