@@ -12,17 +12,22 @@ const axiosInstance = axios.create({
 
 //request Interceptor
 axiosInstance.interceptors.request.use(
-    (config) => {
-        const accessToken = localStorage.getItem("token");
-        if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    const isAuthRoute =
+      config.url?.includes("/api/auth/login") ||
+      config.url?.includes("/api/auth/register");
+
+    if (token && !isAuthRoute) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
+
 
 //response interceptor
 axiosInstance.interceptors.response.use(
