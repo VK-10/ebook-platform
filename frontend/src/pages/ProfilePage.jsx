@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { User, Mail } from "lucide-react";
 
-import DashBoardLayout from "../components/layout/DashboardLayout";
+import DashBoardLayout from "../components/layout/DashBoardLayout";
 import InputField from "../components/ui/InputField";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";

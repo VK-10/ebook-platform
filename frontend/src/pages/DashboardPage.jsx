@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Plus, Book } from "lucide-react";
-import DashBoardLayout from "../components/layout/DashboardLayout";
+import DashBoardLayout from "../components/layout/DashBoardLayout";
 import CreateBookModal from "../components/modals/CreateBookModal";
 import BookCard from "../components/cards/BookCard"; // <-- ensure this path matches your project
 
