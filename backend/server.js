@@ -13,9 +13,9 @@ const app = express();
 
 
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");;
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) {
       cb(null, true);
@@ -24,7 +24,13 @@ app.use(cors({
     }
   },
   credentials: true,
-}));
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 
 
 connectDB();
@@ -38,6 +44,8 @@ app.use(express.json());
 //   );
 //   next();
 // });
+
+// app.options("*", cors());
 
 app.get("/", (req, res) => {
   res.send("API is running");
