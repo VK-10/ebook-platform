@@ -11,13 +11,7 @@ const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
 
-// app.use(
-//     cors({
-//         origin: "*",
-//         methods: ["GET", "POST", "PUT", "DELETE"],
-//         allowedHeaders: ["Content-Type", "Authorization"]
-//     })
-// )
+
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
 
@@ -38,12 +32,12 @@ connectDB();
 app.use(express.json());
 
 // dev only
-app.use((req, res, next) => {
-  res.setHeader("Content-Security-Policy",
-    "default-src 'self'; connect-src 'self' http://localhost:8000 ws://localhost:8000; img-src 'self' data: http://localhost:8000; style-src 'self' 'unsafe-inline';"
-  );
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader("Content-Security-Policy",
+//     "default-src 'self'; connect-src 'self' http://localhost:8000 ws://localhost:8000; img-src 'self' data: http://localhost:8000; style-src 'self' 'unsafe-inline';"
+//   );
+//   next();
+// });
 
 
 //static uploads
