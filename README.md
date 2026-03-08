@@ -2,6 +2,13 @@
 
 A full-stack eBook management application built with React and Node.js. Manage your digital book collection with authentication and AI features.
 
+## Demo
+
+
+https://github.com/user-attachments/assets/83d93ec8-1ceb-4e23-aadb-c7c31b3f3180
+
+
+
 ## Features
 
 - User authentication with JWT
